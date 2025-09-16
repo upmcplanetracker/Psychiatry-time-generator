@@ -137,10 +137,14 @@
 
             // 3. Run the correct logic based on appointment type
             if (apptType === '30min') {
-                emDuration = getRandomInt(9, 14);
-                const maxTherapyDuration = 30 - emDuration;
-                therapyDuration = getRandomInt(16, maxTherapyDuration);
-                totalDuration = emDuration + therapyDuration;
+                // +++ NEW, CORRECTED LOGIC +++
+                // First, determine the total duration to ensure it doesn't cause an overflow
+                totalDuration = getRandomInt(26, 29); // Min E&M(9)+Therapy(16)=25. This prevents overflow with startOffset.
+                // Then, partition the total duration, ensuring therapy is at least 16 mins
+                const maxEmDuration = totalDuration - 16; // This guarantees therapy is >= 16
+                const minEmDuration = 9;
+                emDuration = getRandomInt(minEmDuration, maxEmDuration);
+                therapyDuration = totalDuration - emDuration;
             } else { // 60min
                 totalDuration = getRandomInt(56, 60);
                 const minEmDuration = 40;
