@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Time Generator</title>
+    <style>
+        /* Basic Styling for the Page */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .options {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        label {
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100px;
+            padding: 8px;
+            margin: 10px auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 16px;
+        }
+        button {
+            background-color: #5a67d8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #434190;
+        }
+        #output {
+            margin-top: 20px;
+            text-align: left;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: "Courier New", Courier, monospace;
+            line-height: 1.6;
+            white-space: pre-wrap; /* Ensures text wraps properly */
+        }
+        .error {
+            color: #d93025;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Time Generator 🗓️</h1>
+
+        <div class="options">
+            <label>
+                <input type="radio" name="apptType" value="30min" checked> 30-Min Follow-Up
+            </label>
+            <label>
+                <input type="radio" name="apptType" value="60min"> 60-Min Initial Eval
+            </label>
+        </div>
+
+        <label for="startTime">Enter Start Time (HHMM):</label>
+        <br>
+        <input type="text" id="startTime" maxlength="4" placeholder="1500">
+        <br>
+        <button onclick="generateTimes()">Generate</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // --- Helper functions ---
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function formatTime(date) {
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}${minutes}`;
+        }
+
+        // --- Main generator logic ---
+        function generateTimes() {
+            const startTimeInput = document.getElementById('startTime').value;
+            const outputDiv = document.getElementById('output');
+            const apptType = document.querySelector('input[name="apptType"]:checked').value;
+
+            // 1. Validate the input
+            if (!/^[0-2][0-9][0-5][0-9]$/.test(startTimeInput)) {
+                outputDiv.innerHTML = '<span class="error">Error: Invalid time format. Please use HHMM.</span>';
+                return;
+            }
+
+            // 2. Add start time variability (0-2 minutes)
+            const baseMinutes = parseInt(startTimeInput.substring(2, 4));
+            let startOffset = 0;
+            if (baseMinutes === 0 || baseMinutes === 30) {
+                startOffset = getRandomInt(0, 2);
+            }
+
+            // Declare variables for durations
+            let emDuration, therapyDuration, totalDuration;
+            const slotDuration = (apptType === '30min') ? 30 : 60;
+
+            // 3. Run the correct logic based on appointment type
+            if (apptType === '30min') {
+                emDuration = getRandomInt(9, 14);
+                const maxTherapyDuration = 30 - emDuration;
+                therapyDuration = getRandomInt(16, maxTherapyDuration);
+                totalDuration = emDuration + therapyDuration;
+            } else { // 60min
+                totalDuration = getRandomInt(56, 60);
+                const minEmDuration = 40;
+                const maxEmDuration = totalDuration - 16;
+                emDuration = getRandomInt(minEmDuration, maxEmDuration);
+                therapyDuration = totalDuration - emDuration;
+            }
+
+            // 4. Calculate all relevant time points
+            const baseStartHour = parseInt(startTimeInput.substring(0, 2));
+
+            const actualStartTime = new Date();
+            actualStartTime.setHours(baseStartHour, baseMinutes + startOffset, 0, 0);
+
+            // This is the hard limit that cannot be passed
+            const slotEndTime = new Date();
+            slotEndTime.setHours(baseStartHour, baseMinutes + slotDuration, 0, 0);
+
+            let emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
+            let therapyEndTime = new Date(actualStartTime.getTime() + totalDuration * 60000);
+
+            // 5. Check if the calculated end time exceeds the slot's boundary and adjust if necessary
+            if (therapyEndTime > slotEndTime) {
+                therapyEndTime = slotEndTime; // Cap the final time
+                // Recalculate durations to match the new, shorter times
+                totalDuration = Math.round((therapyEndTime - actualStartTime) / 60000);
+                emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
+                // Ensure E&M end time doesn't somehow pass the new therapy end time
+                if (emEndTime > therapyEndTime) {
+                    emEndTime = therapyEndTime;
+                }
+                therapyDuration = Math.round((therapyEndTime - emEndTime) / 60000);
+            }
+
+            // Format all times for display
+            const actualStartTimeFormatted = formatTime(actualStartTime);
+            const emEndTimeFormatted = formatTime(emEndTime);
+            const therapyEndTimeFormatted = formatTime(therapyEndTime);
+
+            // 6. Display the results
+            outputDiv.innerHTML = `E&M: ${actualStartTimeFormatted} to ${emEndTimeFormatted} (${emDuration} minutes)
+${therapyDuration} minutes therapy
+Therapy start time ${emEndTimeFormatted}, stop time is ${therapyEndTimeFormatted}
+(Total time: ${totalDuration} minutes)`;
+        }
+    </script>
+
+</body>
+</html>
