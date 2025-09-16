@@ -48,7 +48,7 @@ Once the page is open in your browser:
 ### Example Output
 
 If you select a 30-minute appointment and enter a start time of `1500`, the output might look something like this:
-E&M: 1501 to 1512 (11 minutes)
-18 minutes therapy
-Therapy start time 1512, stop time is 1530
-(Total time: 29 minutes)
+`E&M: 1501 to 1512 (11 minutes)`
+`18 minutes therapy`
+`Therapy start time 1512, stop time is 1530`
+`(Total time: 29 minutes)`
