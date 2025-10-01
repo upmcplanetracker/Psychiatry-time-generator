@@ -4,6 +4,8 @@ A simple, offline, browser-based tool for generating realistic E&M (Evaluation a
 
 This tool helps create varied and plausible time entries for 30-minute and 60-minute appointments, adding slight, randomized offsets to start times and durations to mimic real-world scenarios.
 
+Insurance companies are using AI to audit notes, and psychiatrist notes with Add-On Psychotherpy are a target.  Insurance companies are also adding in exact time documentation requirements to document add-on psychotherpy, all to save money/claw back money from providers.  No psychiatrist provides add-on therapy in a discrete block with a stopwatch like insurance is requiring re: documentation. This helps you stay on the right side of AI generated audits without providing false information.
+
 ***
 
 ## ✨ Features
