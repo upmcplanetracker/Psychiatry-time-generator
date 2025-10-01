@@ -61,20 +61,47 @@
         button:hover {
             background-color: #434190;
         }
-        #output {
+        /* New styles for the output and copy button container */
+        .output-container {
             margin-top: 20px;
+            position: relative; /* Needed to position the copy button */
+        }
+        #output {
             text-align: left;
             background-color: #f9f9f9;
             border: 1px solid #eee;
             border-radius: 5px;
             padding: 15px;
+            padding-right: 50px; /* Make space for the button */
+            min-height: 50px; /* Ensure space when empty */
             font-family: "Courier New", Courier, monospace;
             line-height: 1.6;
-            white-space: pre-wrap; /* Ensures text wraps properly */
+            white-space: pre-wrap;
+            position: relative;
         }
         .error {
             color: #d93025;
             font-weight: bold;
+        }
+        /* Style for the copy button within the output area */
+        #copyButton {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            color: #5a67d8;
+            border: 1px solid #5a67d8;
+            padding: 5px 8px;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background-color 0.2s, color 0.2s;
+            margin: 0; /* Override button margin */
+        }
+        #copyButton:hover {
+            background-color: #5a67d8;
+            color: white;
         }
     </style>
 </head>
@@ -97,7 +124,11 @@
         <input type="text" id="startTime" maxlength="4" placeholder="1500">
         <br>
         <button onclick="generateTimes()">Generate</button>
-        <div id="output"></div>
+        
+        <div class="output-container">
+            <div id="output"></div>
+            <button id="copyButton" style="display:none;" onclick="copyResults()" title="Copy to Clipboard">📋</button>
+        </div>
     </div>
 
     <script>
@@ -111,12 +142,36 @@
             const minutes = date.getMinutes().toString().padStart(2, '0');
             return `${hours}${minutes}`;
         }
+        
+        // --- New function to copy results ---
+        function copyResults() {
+            const outputDiv = document.getElementById('output');
+            const textToCopy = outputDiv.textContent;
+
+            // Use the modern navigator.clipboard API
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const copyButton = document.getElementById('copyButton');
+                const originalText = copyButton.textContent;
+                copyButton.textContent = '✅'; // Show a success icon temporarily
+                setTimeout(() => {
+                    copyButton.textContent = originalText;
+                }, 1000);
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+                alert('Failed to copy text. Please copy manually.');
+            });
+        }
 
         // --- Main generator logic ---
         function generateTimes() {
             const startTimeInput = document.getElementById('startTime').value;
             const outputDiv = document.getElementById('output');
+            const copyButton = document.getElementById('copyButton');
             const apptType = document.querySelector('input[name="apptType"]:checked').value;
+            
+            // Clear previous output/error and hide button
+            outputDiv.innerHTML = '';
+            copyButton.style.display = 'none';
 
             // 1. Validate the input
             if (!/^[0-2][0-9][0-5][0-9]$/.test(startTimeInput)) {
@@ -185,10 +240,12 @@
             const therapyEndTimeFormatted = formatTime(therapyEndTime);
 
             // 6. Display the results
-            outputDiv.innerHTML = `E&M: ${actualStartTimeFormatted} to ${emEndTimeFormatted} (${emDuration} minutes)
-${therapyDuration} minutes therapy
-Therapy start time ${emEndTimeFormatted}, stop time is ${therapyEndTimeFormatted}
-(Total time: ${totalDuration} minutes)`;
+            outputDiv.innerHTML = `E&M start ${actualStartTimeFormatted}, end ${emEndTimeFormatted} (${emDuration} minutes)
+Add-on psychotherapy start ${emEndTimeFormatted}, end ${therapyEndTimeFormatted} (${therapyDuration} minutes)
+Total encounter time: ${totalDuration} minutes`;
+            
+            // 7. Show the copy button now that there are results
+            copyButton.style.display = 'block';
         }
     </script>
 
