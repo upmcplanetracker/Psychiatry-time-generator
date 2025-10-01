@@ -61,10 +61,9 @@
         button:hover {
             background-color: #434190;
         }
-        /* New styles for the output and copy button container */
         .output-container {
             margin-top: 20px;
-            position: relative; /* Needed to position the copy button */
+            position: relative;
         }
         #output {
             text-align: left;
@@ -72,8 +71,8 @@
             border: 1px solid #eee;
             border-radius: 5px;
             padding: 15px;
-            padding-right: 50px; /* Make space for the button */
-            min-height: 50px; /* Ensure space when empty */
+            padding-right: 50px;
+            min-height: 50px;
             font-family: "Courier New", Courier, monospace;
             line-height: 1.6;
             white-space: pre-wrap;
@@ -83,7 +82,6 @@
             color: #d93025;
             font-weight: bold;
         }
-        /* Style for the copy button within the output area */
         #copyButton {
             position: absolute;
             top: 5px;
@@ -97,7 +95,7 @@
             cursor: pointer;
             border-radius: 3px;
             transition: background-color 0.2s, color 0.2s;
-            margin: 0; /* Override button margin */
+            margin: 0;
         }
         #copyButton:hover {
             background-color: #5a67d8;
@@ -132,7 +130,6 @@
     </div>
 
     <script>
-        // --- Helper functions ---
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
@@ -143,12 +140,10 @@
             return `${hours}${minutes}`;
         }
         
-        // --- New function to copy results ---
         function copyResults() {
             const outputDiv = document.getElementById('output');
             const textToCopy = outputDiv.textContent;
 
-            // Use the modern navigator.clipboard API
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const copyButton = document.getElementById('copyButton');
                 const originalText = copyButton.textContent;
@@ -162,45 +157,36 @@
             });
         }
 
-        // --- Main generator logic ---
         function generateTimes() {
             const startTimeInput = document.getElementById('startTime').value;
             const outputDiv = document.getElementById('output');
             const copyButton = document.getElementById('copyButton');
             const apptType = document.querySelector('input[name="apptType"]:checked').value;
             
-            // Clear previous output/error and hide button
             outputDiv.innerHTML = '';
             copyButton.style.display = 'none';
 
-            // 1. Validate the input
             if (!/^[0-2][0-9][0-5][0-9]$/.test(startTimeInput)) {
                 outputDiv.innerHTML = '<span class="error">Error: Invalid time format. Please use HHMM.</span>';
                 return;
             }
 
-            // 2. Add start time variability (0-2 minutes)
             const baseMinutes = parseInt(startTimeInput.substring(2, 4));
             let startOffset = 0;
             if (baseMinutes === 0 || baseMinutes === 30) {
                 startOffset = getRandomInt(0, 2);
             }
 
-            // Declare variables for durations
             let emDuration, therapyDuration, totalDuration;
             const slotDuration = (apptType === '30min') ? 30 : 60;
 
-            // 3. Run the correct logic based on appointment type
-            if (apptType === '30min') {
-                // +++ NEW, CORRECTED LOGIC +++
-                // First, determine the total duration to ensure it doesn't cause an overflow
-                totalDuration = getRandomInt(26, 29); // Min E&M(9)+Therapy(16)=25. This prevents overflow with startOffset.
-                // Then, partition the total duration, ensuring therapy is at least 16 mins
-                const maxEmDuration = totalDuration - 16; // This guarantees therapy is >= 16
+            if (apptType === '30min');
+                totalDuration = getRandomInt(26, 29);
+                const maxEmDuration = totalDuration - 16;
                 const minEmDuration = 9;
                 emDuration = getRandomInt(minEmDuration, maxEmDuration);
                 therapyDuration = totalDuration - emDuration;
-            } else { // 60min
+            } else {
                 totalDuration = getRandomInt(56, 60);
                 const minEmDuration = 40;
                 const maxEmDuration = totalDuration - 16;
@@ -208,43 +194,35 @@
                 therapyDuration = totalDuration - emDuration;
             }
 
-            // 4. Calculate all relevant time points
             const baseStartHour = parseInt(startTimeInput.substring(0, 2));
 
             const actualStartTime = new Date();
             actualStartTime.setHours(baseStartHour, baseMinutes + startOffset, 0, 0);
 
-            // This is the hard limit that cannot be passed
             const slotEndTime = new Date();
             slotEndTime.setHours(baseStartHour, baseMinutes + slotDuration, 0, 0);
 
             let emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
             let therapyEndTime = new Date(actualStartTime.getTime() + totalDuration * 60000);
 
-            // 5. Check if the calculated end time exceeds the slot's boundary and adjust if necessary
             if (therapyEndTime > slotEndTime) {
-                therapyEndTime = slotEndTime; // Cap the final time
-                // Recalculate durations to match the new, shorter times
+                therapyEndTime = slotEndTime;
                 totalDuration = Math.round((therapyEndTime - actualStartTime) / 60000);
                 emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
-                // Ensure E&M end time doesn't somehow pass the new therapy end time
                 if (emEndTime > therapyEndTime) {
                     emEndTime = therapyEndTime;
                 }
                 therapyDuration = Math.round((therapyEndTime - emEndTime) / 60000);
             }
 
-            // Format all times for display
             const actualStartTimeFormatted = formatTime(actualStartTime);
             const emEndTimeFormatted = formatTime(emEndTime);
             const therapyEndTimeFormatted = formatTime(therapyEndTime);
 
-            // 6. Display the results
             outputDiv.innerHTML = `E&M start ${actualStartTimeFormatted}, end ${emEndTimeFormatted} (${emDuration} minutes)
 Add-on psychotherapy start ${emEndTimeFormatted}, end ${therapyEndTimeFormatted} (${therapyDuration} minutes)
 Total encounter time: ${totalDuration} minutes`;
             
-            // 7. Show the copy button now that there are results
             copyButton.style.display = 'block';
         }
     </script>
