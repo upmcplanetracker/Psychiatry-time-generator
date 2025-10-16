@@ -235,14 +235,26 @@
 
             // 5. Check if the calculated end time exceeds the slot's boundary and adjust
             if (therapyEndTime > slotEndTime) {
-                therapyEndTime = slotEndTime;
+                therapyEndTime = slotEndTime; // Cap the final end time
+                
+                // Recalculate total duration based on the new, capped end time
                 totalDuration = Math.round((therapyEndTime - actualStartTime) / 60000);
-                emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
-                if (emEndTime > therapyEndTime) {
-                    emEndTime = therapyEndTime;
+
+                // --- START OF FIX ---
+                // Define the maximum E&M time possible to preserve 16 mins of therapy
+                const maxEmDurationAfterAdjustment = totalDuration - 16;
+
+                // If the original E&M time is too long, cap it at the new maximum
+                if (emDuration > maxEmDurationAfterAdjustment) {
+                    emDuration = maxEmDurationAfterAdjustment;
                 }
-                therapyDuration = Math.round((therapyEndTime - emEndTime) / 60000);
+                // --- END OF FIX ---
             }
+            
+            // Recalculate final times and durations based on potentially adjusted values
+            emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
+            therapyDuration = Math.round((therapyEndTime - emEndTime) / 60000);
+
 
             // Format all times for display
             const actualStartTimeFormatted = formatTime(actualStartTime);
