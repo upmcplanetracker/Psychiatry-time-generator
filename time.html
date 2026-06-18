@@ -104,7 +104,7 @@
             color: white;
         }
 
-        /* ✨ NEW: Style for the button when content is copied ✨ */
+        /* Style for the button when content is copied */
         #copyButton.copied {
             background-color: #28a745; /* Green */
             border-color: #28a745;
@@ -139,7 +139,7 @@
     </div>
 
     <script>
-        // ✨ NEW: Declare a variable to hold our timer ✨
+        // Timer for copy button visual feedback
         let copyTimeout;
 
         // --- Helper functions ---
@@ -153,7 +153,7 @@
             return `${hours}${minutes}`;
         }
         
-        // --- ✨ UPDATED function to copy results ✨ ---
+        // --- Copy function with visual feedback ---
         function copyResults() {
             const outputDiv = document.getElementById('output');
             const textToCopy = outputDiv.textContent;
@@ -165,13 +165,13 @@
             navigator.clipboard.writeText(textToCopy).then(() => {
                 // Change the button to its "copied" state
                 copyButton.textContent = '✅';
-                copyButton.classList.add('copied'); // Add the green style class
+                copyButton.classList.add('copied');
 
-                // Set a new timer to revert the button after 2 seconds
+                // Revert after 2 seconds
                 copyTimeout = setTimeout(() => {
-                    copyButton.textContent = '📋'; // Revert to original icon
-                    copyButton.classList.remove('copied'); // Remove the green style
-                }, 2000); // Revert after 2000 milliseconds
+                    copyButton.textContent = '📋';
+                    copyButton.classList.remove('copied');
+                }, 2000);
             }).catch(err => {
                 console.error('Could not copy text: ', err);
                 alert('Failed to copy text. Please copy manually.');
@@ -185,25 +185,23 @@
             const copyButton = document.getElementById('copyButton');
             const apptType = document.querySelector('input[name="apptType"]:checked').value;
             
-            // Clear previous output and RESET the copy button state
+            // Clear previous output and reset copy button state
             outputDiv.innerHTML = '';
-            clearTimeout(copyTimeout); // Stop any pending revert timer
-            copyButton.classList.remove('copied'); // Remove green style if present
-            copyButton.textContent = '📋'; // Ensure icon is reset
+            clearTimeout(copyTimeout);
+            copyButton.classList.remove('copied');
+            copyButton.textContent = '📋';
             copyButton.style.display = 'none';
 
-            // 1. Validate the input
-            if (!/^[0-2][0-9][0-5][0-9]$/.test(startTimeInput)) {
-                outputDiv.innerHTML = '<span class="error">Error: Invalid time format. Please use HHMM.</span>';
+            // 1. Validate the input (only valid 24‑hour times: 0000‑2359)
+            if (!/^([01][0-9]|2[0-3])[0-5][0-9]$/.test(startTimeInput)) {
+                outputDiv.innerHTML = '<span class="error">Error: Invalid time format. Please use HHMM (0000‑2359).</span>';
                 return;
             }
 
-            // 2. Add start time variability (0-2 minutes)
-            const baseMinutes = parseInt(startTimeInput.substring(2, 4));
-            let startOffset = 0;
-            if (baseMinutes === 0 || baseMinutes === 30) {
-                startOffset = getRandomInt(0, 2);
-            }
+            // 2. Always add 0‑2 minute random offset to the start time
+            const baseHours = parseInt(startTimeInput.substring(0, 2), 10);
+            const baseMinutes = parseInt(startTimeInput.substring(2, 4), 10);
+            const startOffset = getRandomInt(0, 2);
 
             // Declare variables for durations
             let emDuration, therapyDuration, totalDuration;
@@ -225,11 +223,10 @@
             }
 
             // 4. Calculate all relevant time points
-            const baseStartHour = parseInt(startTimeInput.substring(0, 2));
             const actualStartTime = new Date();
-            actualStartTime.setHours(baseStartHour, baseMinutes + startOffset, 0, 0);
+            actualStartTime.setHours(baseHours, baseMinutes + startOffset, 0, 0);
             const slotEndTime = new Date();
-            slotEndTime.setHours(baseStartHour, baseMinutes + slotDuration, 0, 0);
+            slotEndTime.setHours(baseHours, baseMinutes + slotDuration, 0, 0);
             let emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
             let therapyEndTime = new Date(actualStartTime.getTime() + totalDuration * 60000);
 
@@ -240,21 +237,18 @@
                 // Recalculate total duration based on the new, capped end time
                 totalDuration = Math.round((therapyEndTime - actualStartTime) / 60000);
 
-                // --- START OF FIX ---
-                // Define the maximum E&M time possible to preserve 16 mins of therapy
+                // Define the maximum E&M time possible while preserving 16 mins of therapy
                 const maxEmDurationAfterAdjustment = totalDuration - 16;
 
-                // If the original E&M time is too long, cap it at the new maximum
+                // If the original E&M time is too long, cap it
                 if (emDuration > maxEmDurationAfterAdjustment) {
                     emDuration = maxEmDurationAfterAdjustment;
                 }
-                // --- END OF FIX ---
             }
             
             // Recalculate final times and durations based on potentially adjusted values
             emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
             therapyDuration = Math.round((therapyEndTime - emEndTime) / 60000);
-
 
             // Format all times for display
             const actualStartTimeFormatted = formatTime(actualStartTime);
@@ -266,8 +260,9 @@
 Add-on psychotherapy start ${emEndTimeFormatted}, end ${therapyEndTimeFormatted} (${therapyDuration} minutes)
 Total encounter time: ${totalDuration} minutes`;
             
-            // 7. Show the copy button now that there are results
+            // 7. Show the copy button and reset radio to 30‑min (feature, not bug)
             copyButton.style.display = 'block';
+            document.querySelector('input[name="apptType"][value="30min"]').checked = true;
         }
     </script>
 
