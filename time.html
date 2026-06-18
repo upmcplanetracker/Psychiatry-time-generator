@@ -21,7 +21,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             text-align: center;
-            width: 380px;
+            width: 400px;
             max-width: 95vw;
         }
         h1 {
@@ -54,6 +54,11 @@
             border-radius: 5px;
             text-align: center;
             font-size: 16px;
+        }
+        input[type="checkbox"] {
+            margin-right: 6px;
+            transform: scale(1.1);
+            vertical-align: middle;
         }
         button {
             background-color: #5a67d8;
@@ -123,6 +128,10 @@
         <label class="heading">Session length (minutes):</label>
         <input type="number" id="sessionLength" min="1" value="30" step="1">
 
+        <label class="heading">
+            <input type="checkbox" id="initialVisit"> Initial Visit (E&M ≥ 30 min)
+        </label>
+
         <label class="heading">Add‑on code:</label>
         <div class="options">
             <label>
@@ -185,6 +194,7 @@
             const sessionLengthInput = document.getElementById('sessionLength');
             const outputDiv = document.getElementById('output');
             const copyButton = document.getElementById('copyButton');
+            const initialVisitCheckbox = document.getElementById('initialVisit');
 
             // Reset UI
             outputDiv.innerHTML = '';
@@ -206,6 +216,10 @@
                 return;
             }
 
+            // Determine E&M minimum based on checkbox
+            const emMin = initialVisitCheckbox.checked ? 30 : 9;
+            const isInitial = initialVisitCheckbox.checked;
+
             // Get selected code and therapy constraints
             const codeRadio = document.querySelector('input[name="code"]:checked');
             const code = codeRadio.value;
@@ -221,7 +235,6 @@
                 therapyMax = Infinity;
             }
 
-            const EM_MIN = 9;
             const OFFSET_RANGE = [0, 3];
             const SHORTFALL_MAX = 4;
 
@@ -230,19 +243,19 @@
             const availableTime = sessionMinutes - offset;
 
             // Feasibility check
-            if (therapyMin + EM_MIN > availableTime) {
+            if (therapyMin + emMin > availableTime) {
                 outputDiv.innerHTML = '<span class="error">This combination is impossible.</span>';
                 return;
             }
 
             // Total encounter time close to available time, small shortfall allowed
-            const minTotal = Math.max(EM_MIN + therapyMin, availableTime - SHORTFALL_MAX);
+            const minTotal = Math.max(emMin + therapyMin, availableTime - SHORTFALL_MAX);
             const totalDuration = getRandomInt(minTotal, availableTime);
 
             // Split into therapy and E&M
-            const maxTherapy = Math.min(therapyMax, totalDuration - EM_MIN);
+            const maxTherapy = Math.min(therapyMax, totalDuration - emMin);
             const therapyDuration = getRandomInt(therapyMin, maxTherapy);
-            const emDuration = totalDuration - therapyDuration;
+            const emDuration = totalDuration - therapyDuration;   // ≥ emMin automatically
 
             // Calculate times
             const baseHours = parseInt(startTimeInput.substring(0, 2), 10);
@@ -258,17 +271,23 @@
             const emEndStr = formatTime(emEnd);
             const therapyEndStr = formatTime(therapyEnd);
 
-            // Display
-            outputDiv.innerHTML = `Add‑on code ${code}
-E&M start ${startStr}, end ${emEndStr} (${emDuration} minutes)
+            // Build output string
+            let outputText = `Add‑on code ${code}`;
+            if (isInitial) {
+                outputText += ` (Initial Visit)`;
+            }
+            outputText += `\nE&M start ${startStr}, end ${emEndStr} (${emDuration} minutes)
 Add‑on psychotherapy start ${emEndStr}, end ${therapyEndStr} (${therapyDuration} minutes)
 Total encounter time: ${totalDuration} minutes`;
 
+            outputDiv.innerHTML = outputText;
+
             copyButton.style.display = 'block';
 
-            // Reset to defaults (feature, not bug)
+            // Reset all inputs to defaults (features, not bugs)
             document.querySelector('input[name="code"][value="90833"]').checked = true;
             sessionLengthInput.value = 30;
+            initialVisitCheckbox.checked = false;
         }
     </script>
 </body>
