@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appointment Time Generator</title>
     <style>
-        /* Basic Styling for the Page */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #f0f2f5;
@@ -22,26 +21,35 @@
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             text-align: center;
-            width: 350px;
+            width: 380px;
+            max-width: 95vw;
         }
         h1 {
             color: #333;
             margin-top: 0;
         }
         .options {
-            margin: 20px 0;
+            margin: 15px 0;
+            text-align: left;
             display: flex;
-            justify-content: center;
-            gap: 20px;
+            flex-direction: column;
+            gap: 8px;
         }
-        label {
+        .options label {
+            font-weight: normal;
+            color: #333;
+            cursor: pointer;
+        }
+        label.heading {
             font-weight: bold;
             color: #555;
+            margin-top: 10px;
+            display: block;
         }
-        input[type="text"] {
-            width: 100px;
+        input[type="text"], input[type="number"] {
+            width: 80px;
             padding: 8px;
-            margin: 10px auto;
+            margin: 6px auto;
             border: 1px solid #ccc;
             border-radius: 5px;
             text-align: center;
@@ -56,15 +64,14 @@
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.2s;
-            margin-top: 10px;
+            margin-top: 15px;
         }
         button:hover {
             background-color: #434190;
         }
-        /* New styles for the output and copy button container */
         .output-container {
             margin-top: 20px;
-            position: relative; /* Needed to position the copy button */
+            position: relative;
         }
         #output {
             text-align: left;
@@ -72,8 +79,8 @@
             border: 1px solid #eee;
             border-radius: 5px;
             padding: 15px;
-            padding-right: 50px; /* Make space for the button */
-            min-height: 50px; /* Ensure space when empty */
+            padding-right: 50px;
+            min-height: 50px;
             font-family: "Courier New", Courier, monospace;
             line-height: 1.6;
             white-space: pre-wrap;
@@ -83,7 +90,6 @@
             color: #d93025;
             font-weight: bold;
         }
-        /* Style for the copy button within the output area */
         #copyButton {
             position: absolute;
             top: 5px;
@@ -97,41 +103,44 @@
             cursor: pointer;
             border-radius: 3px;
             transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-            margin: 0; /* Override button margin */
+            margin: 0;
         }
         #copyButton:hover {
             background-color: #5a67d8;
             color: white;
         }
-
-        /* Style for the button when content is copied */
         #copyButton.copied {
-            background-color: #28a745; /* Green */
+            background-color: #28a745;
             border-color: #28a745;
             color: white;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h1>Time Generator 🗓️</h1>
 
+        <label class="heading">Session length (minutes):</label>
+        <input type="number" id="sessionLength" min="1" value="30" step="1">
+
+        <label class="heading">Add‑on code:</label>
         <div class="options">
             <label>
-                <input type="radio" name="apptType" value="30min" checked> 30-Min Follow-Up
+                <input type="radio" name="code" value="90833" checked> 90833 (16‑37 min therapy)
             </label>
             <label>
-                <input type="radio" name="apptType" value="60min"> 60-Min Initial Eval
+                <input type="radio" name="code" value="90836"> 90836 (38‑52 min therapy)
+            </label>
+            <label>
+                <input type="radio" name="code" value="90838"> 90838 (53+ min therapy)
             </label>
         </div>
 
-        <label for="startTime">Enter Start Time (HHMM):</label>
-        <br>
+        <label for="startTime" class="heading">Enter Start Time (HHMM):</label>
         <input type="text" id="startTime" maxlength="4" placeholder="1500">
         <br>
         <button onclick="generateTimes()">Generate</button>
-        
+
         <div class="output-container">
             <div id="output"></div>
             <button id="copyButton" style="display:none;" onclick="copyResults()" title="Copy to Clipboard">📋</button>
@@ -139,7 +148,6 @@
     </div>
 
     <script>
-        // Timer for copy button visual feedback
         let copyTimeout;
 
         // --- Helper functions ---
@@ -152,22 +160,16 @@
             const minutes = date.getMinutes().toString().padStart(2, '0');
             return `${hours}${minutes}`;
         }
-        
-        // --- Copy function with visual feedback ---
+
         function copyResults() {
             const outputDiv = document.getElementById('output');
             const textToCopy = outputDiv.textContent;
             const copyButton = document.getElementById('copyButton');
 
-            // Clear any existing timer to handle rapid clicks
             clearTimeout(copyTimeout);
-
             navigator.clipboard.writeText(textToCopy).then(() => {
-                // Change the button to its "copied" state
                 copyButton.textContent = '✅';
                 copyButton.classList.add('copied');
-
-                // Revert after 2 seconds
                 copyTimeout = setTimeout(() => {
                     copyButton.textContent = '📋';
                     copyButton.classList.remove('copied');
@@ -178,93 +180,96 @@
             });
         }
 
-        // --- Main generator logic ---
         function generateTimes() {
             const startTimeInput = document.getElementById('startTime').value;
+            const sessionLengthInput = document.getElementById('sessionLength');
             const outputDiv = document.getElementById('output');
             const copyButton = document.getElementById('copyButton');
-            const apptType = document.querySelector('input[name="apptType"]:checked').value;
-            
-            // Clear previous output and reset copy button state
+
+            // Reset UI
             outputDiv.innerHTML = '';
             clearTimeout(copyTimeout);
             copyButton.classList.remove('copied');
             copyButton.textContent = '📋';
             copyButton.style.display = 'none';
 
-            // 1. Validate the input (only valid 24‑hour times: 0000‑2359)
+            // Validate start time
             if (!/^([01][0-9]|2[0-3])[0-5][0-9]$/.test(startTimeInput)) {
-                outputDiv.innerHTML = '<span class="error">Error: Invalid time format. Please use HHMM (0000‑2359).</span>';
+                outputDiv.innerHTML = '<span class="error">Error: Invalid time format. Use HHMM (0000‑2359).</span>';
                 return;
             }
 
-            // 2. Always add 0‑2 minute random offset to the start time
+            // Validate session length
+            const sessionMinutes = parseInt(sessionLengthInput.value, 10);
+            if (isNaN(sessionMinutes) || sessionMinutes < 1) {
+                outputDiv.innerHTML = '<span class="error">Error: Please enter a valid session length (at least 1 minute).</span>';
+                return;
+            }
+
+            // Get selected code and therapy constraints
+            const codeRadio = document.querySelector('input[name="code"]:checked');
+            const code = codeRadio.value;
+            let therapyMin, therapyMax;
+            if (code === '90833') {
+                therapyMin = 16;
+                therapyMax = 37;
+            } else if (code === '90836') {
+                therapyMin = 38;
+                therapyMax = 52;
+            } else if (code === '90838') {
+                therapyMin = 53;
+                therapyMax = Infinity;
+            }
+
+            const EM_MIN = 9;
+            const OFFSET_RANGE = [0, 3];
+            const SHORTFALL_MAX = 4;
+
+            // Random start offset (0‑3 min)
+            const offset = getRandomInt(OFFSET_RANGE[0], OFFSET_RANGE[1]);
+            const availableTime = sessionMinutes - offset;
+
+            // Feasibility check
+            if (therapyMin + EM_MIN > availableTime) {
+                outputDiv.innerHTML = '<span class="error">This combination is impossible.</span>';
+                return;
+            }
+
+            // Total encounter time close to available time, small shortfall allowed
+            const minTotal = Math.max(EM_MIN + therapyMin, availableTime - SHORTFALL_MAX);
+            const totalDuration = getRandomInt(minTotal, availableTime);
+
+            // Split into therapy and E&M
+            const maxTherapy = Math.min(therapyMax, totalDuration - EM_MIN);
+            const therapyDuration = getRandomInt(therapyMin, maxTherapy);
+            const emDuration = totalDuration - therapyDuration;
+
+            // Calculate times
             const baseHours = parseInt(startTimeInput.substring(0, 2), 10);
             const baseMinutes = parseInt(startTimeInput.substring(2, 4), 10);
-            const startOffset = getRandomInt(0, 2);
 
-            // Declare variables for durations
-            let emDuration, therapyDuration, totalDuration;
-            const slotDuration = (apptType === '30min') ? 30 : 60;
+            const actualStart = new Date();
+            actualStart.setHours(baseHours, baseMinutes + offset, 0, 0);
 
-            // 3. Run the correct logic based on appointment type
-            if (apptType === '30min') {
-                totalDuration = getRandomInt(26, 29);
-                const maxEmDuration = totalDuration - 16;
-                const minEmDuration = 9;
-                emDuration = getRandomInt(minEmDuration, maxEmDuration);
-                therapyDuration = totalDuration - emDuration;
-            } else { // 60min
-                totalDuration = getRandomInt(56, 60);
-                const minEmDuration = 40;
-                const maxEmDuration = totalDuration - 16;
-                emDuration = getRandomInt(minEmDuration, maxEmDuration);
-                therapyDuration = totalDuration - emDuration;
-            }
+            const emEnd = new Date(actualStart.getTime() + emDuration * 60000);
+            const therapyEnd = new Date(actualStart.getTime() + totalDuration * 60000);
 
-            // 4. Calculate all relevant time points
-            const actualStartTime = new Date();
-            actualStartTime.setHours(baseHours, baseMinutes + startOffset, 0, 0);
-            const slotEndTime = new Date();
-            slotEndTime.setHours(baseHours, baseMinutes + slotDuration, 0, 0);
-            let emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
-            let therapyEndTime = new Date(actualStartTime.getTime() + totalDuration * 60000);
+            const startStr = formatTime(actualStart);
+            const emEndStr = formatTime(emEnd);
+            const therapyEndStr = formatTime(therapyEnd);
 
-            // 5. Check if the calculated end time exceeds the slot's boundary and adjust
-            if (therapyEndTime > slotEndTime) {
-                therapyEndTime = slotEndTime; // Cap the final end time
-                
-                // Recalculate total duration based on the new, capped end time
-                totalDuration = Math.round((therapyEndTime - actualStartTime) / 60000);
-
-                // Define the maximum E&M time possible while preserving 16 mins of therapy
-                const maxEmDurationAfterAdjustment = totalDuration - 16;
-
-                // If the original E&M time is too long, cap it
-                if (emDuration > maxEmDurationAfterAdjustment) {
-                    emDuration = maxEmDurationAfterAdjustment;
-                }
-            }
-            
-            // Recalculate final times and durations based on potentially adjusted values
-            emEndTime = new Date(actualStartTime.getTime() + emDuration * 60000);
-            therapyDuration = Math.round((therapyEndTime - emEndTime) / 60000);
-
-            // Format all times for display
-            const actualStartTimeFormatted = formatTime(actualStartTime);
-            const emEndTimeFormatted = formatTime(emEndTime);
-            const therapyEndTimeFormatted = formatTime(therapyEndTime);
-
-            // 6. Display the results
-            outputDiv.innerHTML = `E&M start ${actualStartTimeFormatted}, end ${emEndTimeFormatted} (${emDuration} minutes)
-Add-on psychotherapy start ${emEndTimeFormatted}, end ${therapyEndTimeFormatted} (${therapyDuration} minutes)
+            // Display
+            outputDiv.innerHTML = `Add‑on code ${code}
+E&M start ${startStr}, end ${emEndStr} (${emDuration} minutes)
+Add‑on psychotherapy start ${emEndStr}, end ${therapyEndStr} (${therapyDuration} minutes)
 Total encounter time: ${totalDuration} minutes`;
-            
-            // 7. Show the copy button and reset radio to 30‑min (feature, not bug)
+
             copyButton.style.display = 'block';
-            document.querySelector('input[name="apptType"][value="30min"]').checked = true;
+
+            // Reset to defaults (feature, not bug)
+            document.querySelector('input[name="code"][value="90833"]').checked = true;
+            sessionLengthInput.value = 30;
         }
     </script>
-
 </body>
 </html>
