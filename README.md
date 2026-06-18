@@ -1,44 +1,44 @@
 🗓️ Appointment Time Generator
 ==============================
 
-**A completely offline, single‑file HTML tool** that creates realistic, audit‑defensible time entries for E&M (Evaluation & Management) with add‑on psychotherapy services.
+**A completely offline, single‑file HTML tool** that creates realistic, audit‑defensible time entries for E&M (Evaluation & Management) and add‑on psychotherapy services. Now with flexible session lengths, three add‑on code options (90833, 90836, 90838), and dynamic feasibility checks.
 
 Designed for psychiatrists and mental health providers who need to document time‑based split billing (E&M + therapy) in a way that mirrors real‑world practice while satisfying strict payer documentation requirements.
 
-**Why this exists:** Insurance companies are increasingly using AI‑powered audits to scrutinize notes with add‑on psychotherapy (CPT codes like +90833, +90836, etc.). They now often require exact start/stop times and expect discrete, stopwatch‑measured blocks — something no real clinical encounter follows. This tool helps you generate plausible, varied time logs that stay on the right side of an AI audit without fabricating information.
+**Why this exists:** Insurance companies are increasingly using AI‑powered audits to scrutinize notes with add‑on psychotherapy (CPT codes +90833, +90836, +90838). They now often require exact start/stop times and expect discrete, stopwatch‑measured blocks — something no real clinical encounter follows. This tool helps you generate plausible, varied time logs that stay on the right side of an AI audit without fabricating information.
 
 ✨ Features
 ----------
 
-*   **Two appointment types:** 30‑minute follow‑up and 60‑minute initial evaluation. E&M is alwyays for 90833. If you are using another 9083x, you'll have to adjust as needed.
+*   **Flexible session length:** Enter any number of minutes (e.g., 30, 45, 60, 92, 120). The tool no longer limits you to fixed 30‑ or 60‑minute slots.
+*   **Three add‑on therapy codes:**
+    *   `90833` – requires 16‑37 minutes of therapy
+    *   `90836` – requires 38‑52 minutes of therapy
+    *   `90838` – requires 53+ minutes of therapy
+*   **Feasibility guard:** If the chosen session length cannot accommodate the selected code’s minimum therapy time (after the random start offset), the tool displays _“This combination is impossible.”_
 *   **Clinically plausible randomization:**
-    *   E&M duration always between 9 and (total‑16) minutes for 30‑min slots, or 40 and (total‑16) for 60‑min slots — guaranteeing at least 16 minutes of therapy for a 90833.
-    *   Total encounter length is randomly chosen from a realistic range: 26‑29 min for 30‑min visits, 56‑60 min for 60‑min visits.
-*   **Natural start‑time variation:** Every generated appointment begins 0–2 minutes after the entered clock time, mimicking typical practice (knock on the door, walking to the room, etc.).
-*   **Strict slot enforcement:** If the random offset + total duration would push past the end of the 30‑ or 60‑minute slot, the tool automatically trims the total time and (if necessary) re‑balances the E&M portion so that therapy still gets at least 16 minutes.
+    *   Total encounter time is randomly chosen within a small window just before the scheduled end (up to 4 minutes short), never unrealistically far from the slot boundary.
+    *   E&M duration is always at least 9 minutes.
+    *   The therapy portion is randomly drawn within the allowed range of the selected code while preserving the 9‑minute E&M floor.
+*   **Natural start‑time variation:** Every generated appointment begins 0‑3 minutes after the entered clock time, mimicking typical practice (knock on the door, walking to the room, etc.).
+*   **Strict slot enforcement:** If the random start offset plus the required minimum times would exceed the session length, the tool immediately warns you. Otherwise, it guarantees the encounter ends within 4 minutes of the scheduled block end.
 *   **Copy‑to‑clipboard:** One‑click copy with visual confirmation (green checkmark).
 *   **Self‑contained offline app:** No dependencies, no network requests — download it once and it works forever.
-*   **Opinionated UX:** After each generation the appointment type resets to “30‑Min Follow‑Up” to prevent accidental reuse of the 60‑min logic (this is intentional, not a bug).
+*   **Opinionated UX:** After each generation, both the session length and the add‑on code revert to their defaults (30 minutes, 90833) to prevent accidental carry‑over of unusual settings.
 
-🔍 How the Randomization Works
+📋 How the Randomization Works
 ------------------------------
 
-The tool’s internal logic is carefully constrained to avoid unrealistic splits that would fail an audit. The core rules are:
+The tool’s internal logic ensures that every generated time split is both **clinically reasonable** and **audit‑defensible**.
 
-*   The therapy component (add‑on psychotherapy) must be **at least 16 minutes** to be billable.
-*   E&M must be at least 9 minutes (30‑min) or 40 minutes (60‑min), reflecting the proportion of medical decision‑making expected for each visit type.
-*   The total encounter time is randomly drawn from a narrow, believable range close to the scheduled block (26‑29 min or 56‑60 min), because most visits don’t fill the entire slot exactly.
-*   A random **start delay of 0‑2 minutes** is always applied, regardless of whether the scheduled time ends in :00, :30, or anything else.
-
-The flow looks like:
-
-1.  User enters a scheduled start (e.g., `0920`).
-2.  The tool picks a total duration _t_ (e.g., 28 min).
-3.  It then randomly selects an E&M duration _e_ between 9 and (t‑16) minutes.
-4.  Therapy duration = t – e (automatically ≥ 16).
-5.  A 0‑2 minute offset is added to the entered start minute.
-6.  The resulting therapy end time is compared to the scheduled slot end (entered time + 30/60 min).
-7.  If the end time exceeds the slot, the therapy end is capped to the slot end, total duration is recalculated, and E&M is reduced (if needed) to keep therapy ≥ 16 min.
+1.  **User provides:** scheduled start time (HHMM), session length (minutes), and add‑on code.
+2.  A random start offset (0‑3 min) is applied to the scheduled start minute.
+3.  The _available time_ = session length – offset (maximum possible encounter length).
+4.  The tool verifies: (minimum therapy for that code + 9‑minute E&M) ≤ available time. If not, it reports “impossible”.
+5.  A **total encounter duration** is randomly chosen between the minimum needed (E&M min + therapy min) and the available time, but never less than (available time – 4 minutes). This keeps the end close to the slot boundary.
+6.  The therapy duration is then randomly selected within the code’s allowed range, but capped so that at least 9 minutes remain for E&M.
+7.  E&M duration = total – therapy (guaranteed ≥ 9).
+8.  The times are calculated and displayed, showing start, E&M end, therapy end, and minute totals.
 
 🚀 Getting Started
 ------------------
@@ -53,39 +53,50 @@ Double‑click the file — it will open in your default web browser. No interne
 
 ### 3\. Use
 
-*   Select the appointment type (30‑min or 60‑min).
+*   Enter the **session length** in minutes (default: 30).
+*   Select the appropriate **add‑on code**:
+    *   `90833` – 16‑37 min therapy
+    *   `90836` – 38‑52 min therapy
+    *   `90838` – 53+ min therapy
 *   Enter the scheduled start time in **HHMM** format (24‑hour clock).
     *   Example: 9:00 AM → `0900`
     *   Example: 2:30 PM → `1430`
-    *   Example: 11:15 AM → `1115`
 *   Click **Generate**.
 *   The output box shows the exact times and durations. Click the 📋 button to copy everything to your clipboard.
 
-📋 Example Output
------------------
+📊 Example Outputs
+------------------
 
-For a 30‑minute appointment scheduled at `1500` (3:00 PM), the output might be:
+**30‑minute session, 90833, start 1200:**
 
-    E&M start 1501, end 1512 (11 minutes)
-    Add-on psychotherapy start 1512, end 1530 (18 minutes)
-    Total encounter time: 29 minutes
+    Add‑on code 90833
+    E&M start 1202, end 1214 (12 minutes)
+    Add‑on psychotherapy start 1214, end 1229 (15 minutes)
+    Total encounter time: 27 minutes
 
-For a 60‑minute appointment entered as `1000`:
+**55‑minute session, 90833, start 1200:**
 
-    E&M start 1002, end 1043 (41 minutes)
-    Add-on psychotherapy start 1043, end 1058 (15 minutes? — wait, that's less than 16!)
-    Total encounter time: 56 minutes
+    Add‑on code 90833
+    E&M start 1201, end 1215 (14 minutes)
+    Add‑on psychotherapy start 1215, end 1252 (37 minutes)
+    Total encounter time: 51 minutes
 
-_(Note: the tool will never output therapy < 16 minutes; if you see such a line in an example, it’s just for illustration of what’s prevented.)_
+**60‑minute session, 90836, start 0900:**
+
+    Add‑on code 90836
+    E&M start 0903, end 0914 (11 minutes)
+    Add‑on psychotherapy start 0914, end 0957 (43 minutes)
+    Total encounter time: 54 minutes
 
 ⚠️ Important Notes
 ------------------
 
 **This tool is not a substitute for clinical judgment.** Always ensure that the generated times reflect the actual work performed. The purpose is to provide plausible, varied documentation templates that match real‑world variability — not to create false records.
 
-*   The tool always resets the appointment type to “30‑Min Follow‑Up” after generation. This is intentional to reduce the chance of inadvertently applying 60‑min logic to a follow‑up visit.
+*   The tool always resets to **30 minutes** and **90833** after each generation (by design).
 *   All time calculations happen in your browser; no data is sent anywhere.
 *   The regex‑based input validation rejects times like `2500` (invalid hour) — only `00`‑`23` are accepted.
+*   If the selected code demands more therapy minutes than the session length (minus start offset and E&M minimum) allows, the tool displays an “impossible” message rather than producing an invalid split.
 
 🧠 Under the Hood (for developers)
 ----------------------------------
@@ -93,11 +104,12 @@ _(Note: the tool will never output therapy < 16 minutes; if you see such a line 
 The tool is a single HTML file with embedded CSS and vanilla JavaScript. Key design decisions:
 
 *   **No external libraries:** everything is plain JS, including the clipboard interaction (using the `navigator.clipboard` API).
-*   **Date‑object math:** all time calculations use the `Date` object for robustness, even though we only ever care about hours/minutes on the same day.
-*   **Slot capping:** after the initial random durations are calculated, if the final therapy end exceeds the scheduled slot end, the code caps the end time and re‑derives the E&M duration, ensuring therapy always gets its minimum 16 minutes.
+*   **Date‑object math:** all time calculations use the `Date` object for robustness, though we only care about hours/minutes on the same day.
+*   **Soft shortfall limit:** a `SHORTFALL_MAX` constant (currently 4 minutes) keeps the total encounter close to the scheduled block end, preventing unrealistic early finishes.
+*   **Feasibility check:** before randomizing durations, the tool confirms that the minimum therapy + minimum E&M ≤ available time. If not, it immediately aborts with a clear message.
 *   **Copy‑button state:** a `setTimeout`‑based feedback loop toggles a green checkmark for 2 seconds; rapid clicks are handled by clearing the previous timer.
 
-The source is extensively commented and straightforward to modify if you need different rules (e.g., different minimum therapy time, different slot lengths).
+The source is extensively commented and straightforward to modify if you need different rules (e.g., different minimum therapy time, different shortfall allowance).
 
 📄 License
 ----------
