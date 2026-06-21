@@ -159,7 +159,6 @@
     <script>
         let copyTimeout;
 
-        // --- Helper functions ---
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
@@ -196,31 +195,26 @@
             const copyButton = document.getElementById('copyButton');
             const initialVisitCheckbox = document.getElementById('initialVisit');
 
-            // Reset UI
             outputDiv.innerHTML = '';
             clearTimeout(copyTimeout);
             copyButton.classList.remove('copied');
             copyButton.textContent = '📋';
             copyButton.style.display = 'none';
 
-            // Validate start time
             if (!/^([01][0-9]|2[0-3])[0-5][0-9]$/.test(startTimeInput)) {
                 outputDiv.innerHTML = '<span class="error">Error: Invalid time format. Use HHMM (0000‑2359).</span>';
                 return;
             }
 
-            // Validate session length
             const sessionMinutes = parseInt(sessionLengthInput.value, 10);
             if (isNaN(sessionMinutes) || sessionMinutes < 1) {
                 outputDiv.innerHTML = '<span class="error">Error: Please enter a valid session length (at least 1 minute).</span>';
                 return;
             }
 
-            // Determine E&M minimum based on checkbox
             const emMin = initialVisitCheckbox.checked ? 30 : 9;
             const isInitial = initialVisitCheckbox.checked;
 
-            // Get selected code and therapy constraints
             const codeRadio = document.querySelector('input[name="code"]:checked');
             const code = codeRadio.value;
             let therapyMin, therapyMax;
@@ -238,11 +232,9 @@
             const OFFSET_RANGE = [0, 3];
             const SHORTFALL_MAX = 4;
 
-            // Random start offset (0‑3 min)
             const offset = getRandomInt(OFFSET_RANGE[0], OFFSET_RANGE[1]);
             const availableTime = sessionMinutes - offset;
 
-            // Feasibility check
             if (therapyMin + emMin > availableTime) {
                 outputDiv.innerHTML = '<span class="error">This combination is impossible.</span>';
                 return;
@@ -257,7 +249,6 @@
             const therapyDuration = getRandomInt(therapyMin, maxTherapy);
             const emDuration = totalDuration - therapyDuration;   // ≥ emMin automatically
 
-            // Calculate times
             const baseHours = parseInt(startTimeInput.substring(0, 2), 10);
             const baseMinutes = parseInt(startTimeInput.substring(2, 4), 10);
 
@@ -271,7 +262,6 @@
             const emEndStr = formatTime(emEnd);
             const therapyEndStr = formatTime(therapyEnd);
 
-            // Build output string
             let outputText = `Add‑on code ${code}`;
             if (isInitial) {
                 outputText += ` (Initial Visit)`;
@@ -284,7 +274,6 @@ Total encounter time: ${totalDuration} minutes`;
 
             copyButton.style.display = 'block';
 
-            // Reset all inputs to defaults (features, not bugs)
             document.querySelector('input[name="code"][value="90833"]').checked = true;
             sessionLengthInput.value = 30;
             initialVisitCheckbox.checked = false;
